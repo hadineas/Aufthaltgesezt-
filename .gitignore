@@ -1,0 +1,28 @@
+# Build Results
+[Bb]in/
+[Oo]bj/
+debug/
+release/
+
+# IDE
+.idea/
+.vscode/
+*.sln.DotSettings.user
+*.suo
+*.user
+*_i.c
+*_p.c
+*.ncb
+*.dbr
+
+# User-specific
+*.userosscache
+*.sln.docstates
+
+# OS
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# Logs
+*.log
