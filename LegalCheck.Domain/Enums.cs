@@ -60,7 +60,17 @@ public enum EducationPurposeType
     StudyMobility_16c = 3,
     RecognitionMeasure_16d = 4,
     EUInternship_16e = 5,
-    LanguageOrSchool_16f = 6
+    LanguageOrSchool_16f = 6,
+    
+    // § 17
+    SearchForTraining_17_1 = 7,
+    StudyApplication_17_2 = 8,
+    
+    // § 18e
+    ResearchMobility_18e = 9,
+    
+    // § 18f
+    ResearchMobility_18f = 10
 }
 
 public enum AdmissionType
@@ -92,5 +102,37 @@ public enum EvidenceType
     TrainingContract = 3,
     Passport = 4,
     Visa = 5,
+    ProfessionalLicense = 6,
+    EquivalenceDecision = 7,  // Bescheid über Gleichwertigkeit
     Other = 99
+}
+
+public enum QualificationType
+{
+    None = 0,
+    VocationalTraining = 1, // Berufsausbildung
+    AcademicDegree = 2      // Hochschulabschluss
+}
+
+public enum EquivalenceStatus
+{
+    NotChecked = 0,
+    Confirmed = 1,          // Anerkannt / Gleichwertig festgestellt
+    PartiallyRecognized = 2,
+    NotEquivalant = 3
+}
+
+public enum EmployeeMobilityType
+{
+    None = 0,
+    BlueCardBusiness_18h = 1,
+    BlueCardLongTerm_18i = 2
+}
+
+public enum ICTRole
+{
+    None = 0,
+    Manager = 1,
+    Specialist = 2,
+    Trainee = 3
 }

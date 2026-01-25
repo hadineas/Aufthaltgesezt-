@@ -7,9 +7,15 @@ public sealed class EducationPurposeCase
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid PersonId { get; set; }
 
+    public bool? HasUniversityEntranceQualification { get; set; } // Hochschulzugangsberechtigung
+
+    // § 18e Research Mobility
+    public bool? HasHostingAgreement { get; set; } // Aufnahmevereinbarung
+    public DateTimeOffset? BamfNotificationDate { get; set; } // Mitteilung an BAMF
+
+    // Common
     public EducationPurposeType PurposeType { get; set; }
 
-    // “Admission/Evidence” – Was liegt vor?
     public AdmissionType AdmissionType { get; set; }
     public bool? HasAdmissionOrContract { get; set; }  // z.B. Uni-Zulassung / Ausbildungsvertrag etc.
     public DateTimeOffset? PlannedStart { get; set; }

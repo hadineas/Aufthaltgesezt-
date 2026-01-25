@@ -30,6 +30,32 @@ public static class AufenthG_Registry
     // Evidence
     public static IFactualRule Fact16b_MatriculationEvidence => new Study_MatriculationEvidenceRule();
 
+    // Search § 17
+    public static IFactualRule Fact17_1_TrainingSearch => new AufenthG_17_1_TrainingSearchRule();
+    public static IFactualRule Fact17_2_StudyApplicant => new AufenthG_17_2_StudyApplicantRule();
+
+    // Employment § 18
+    public static IFactualRule Def18_3_Fachkraft => new AufenthG_18_FachkraftDefinitionRule();
+    public static IFactualRule Fact18_2_General => new AufenthG_18_GeneralRequirementsRule();
+    public static IFactualRule Fact18_2_5_Age => new AufenthG_18_AgePensionRule();
+    
+    // Entitlements
+    public static IFactualRule Entitlement18a => new AufenthG_18a_VocationalEntitlementRule();
+    public static IFactualRule Entitlement18b => new AufenthG_18b_AcademicEntitlementRule();
+    public static IFactualRule Entitlement18g => new AufenthG_18g_BlueCardRule();
+    public static IFactualRule Settlement18c => new AufenthG_18c_SettlementRule();
+    
+    // Mobility § 18e / 18f
+    public static IFactualRule Fact18e_Mobility => new AufenthG_18e_MobilityRule();
+    public static IFactualRule Fact18f_MobileResearcher => new AufenthG_18f_MobileResearcherRule();
+    
+    // Mobility § 18h / 18i
+    public static IFactualRule Fact18h_BusinessMobility => new AufenthG_18h_BusinessMobilityRule();
+    public static IFactualRule Fact18i_LongTermMobility => new AufenthG_18i_LongTermMobilityRule();
+    
+    // § 19 ICT
+    public static IFactualRule Entitlement19_ICTCard => new AufenthG_19_ICTCardRule();
+
     public static IFactualRule Precheck10_Asylum => new AufenthG_10_PrecheckRule();
     
     // Existence / Compliance
@@ -57,6 +83,23 @@ public static class AufenthG_Registry
         Fact16b_MatriculationEvidence,
         Precheck16c_Mobility,
         
+        Fact17_1_TrainingSearch,
+        Fact17_2_StudyApplicant,
+
+        Def18_3_Fachkraft,
+        Fact18_2_General,
+        Fact18_2_5_Age,
+        
+        Entitlement18a,
+        Entitlement18b,
+        Entitlement18g,
+        Settlement18c,
+        Fact18e_Mobility,
+        Fact18f_MobileResearcher,
+        Fact18h_BusinessMobility,
+        Fact18i_LongTermMobility,
+        Entitlement19_ICTCard,
+
         Precheck12_Conditions,
         Precheck9c_Exclusions
     };

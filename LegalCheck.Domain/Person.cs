@@ -24,8 +24,11 @@ public class Person
     // § 15a Distribution
     public DistributionProcedure15a? Distribution15a { get; set; }
 
-    // § 16-16f Education
+    // § 16-16f Education + § 17 Search
     public List<EducationPurposeCase> EducationCases { get; set; } = new();
+
+    // § 18 Employment
+    public List<EmploymentCase> EmploymentCases { get; set; } = new();
 
     // Documents
     public List<EvidenceDocument> Documents { get; set; } = new();
@@ -45,6 +48,9 @@ public class Person
     // Economic Situation (Now calculated or manual override)
     public bool IsLivelihoodSecured { get; set; }
     public decimal MonthlyHousingCost { get; set; }
+    
+    // Social Security (for § 18c)
+    public int PensionContributionMonths { get; set; } // Pflicht/freiwillige Beiträge
     
     // Conduct
     public bool HasCriminalRecord { get; set; }

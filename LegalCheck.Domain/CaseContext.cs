@@ -36,8 +36,11 @@ public record CaseContext(
     // § 15a
     DistributionProcedure15a? Distribution15a,
     
-    // § 16-16f
+    // § 16-16f, § 17
     IReadOnlyList<EducationPurposeCase> EducationCases,
+
+    // § 18
+    IReadOnlyList<EmploymentCase> EmploymentCases,
 
     // Evidence
     IReadOnlyList<EvidenceDocument> Documents,
@@ -51,6 +54,7 @@ public record CaseContext(
     bool IsLivelihoodSecured, // Manual overrides or deep calc
     decimal MonthlyNetIncome, // Sum of current employments
     decimal MonthlyHousingCost,
+    int PensionContributionMonths, // New for § 18c
 
     // Conduct
     // Conduct

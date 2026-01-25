@@ -97,6 +97,7 @@ public class EvaluationService
             
             Distribution15a: p.Distribution15a,
             EducationCases: p.EducationCases,
+            EmploymentCases: p.EmploymentCases,
             
             Documents: p.Documents,
 
@@ -104,8 +105,10 @@ public class EvaluationService
             IntegrationCourseCompleted: p.IntegrationCourseCompleted,
             CommitsToFdgo: p.CommitsToFreeDemocraticOrder,
             IsLivelihoodSecured: p.IsLivelihoodSecured,
-            MonthlyNetIncome: income,
+            MonthlyNetIncome: p.EmploymentCases.Where(e => e.HasConcreteJobOffer).Sum(e => e.MonthlySalaryGross), // Simple gross sum
             MonthlyHousingCost: p.MonthlyHousingCost,
+            PensionContributionMonths: p.PensionContributionMonths,
+            
             HasCriminalRecord: p.HasCriminalRecord,
             
             HasEntryBan: p.HasEntryBan,

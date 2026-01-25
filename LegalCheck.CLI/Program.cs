@@ -472,6 +472,235 @@ class Program
              if (r.RuleId == "FACT_16b_MatriculationEvidenceUploaded")
                  PrintResult("§ 16b Evidence Check (Expected: Missing)", r);
         }
+
+        Console.WriteLine("\n-------------------------------------------");
+        Console.WriteLine("LegalCheck Demo - § 17 Search & § 18 Skilled Workers");
+        Console.WriteLine("-------------------------------------------");
+
+        // 26. § 17(1) Search for Training (Fail Age > 35)
+        // Note: Our rule assumes Age is checked externally or via manual logic as it's not in Context yet.
+        // But let's test Livelihood failure.
+        var searchApplicant = new Applicant("Searcher (No Money)",
+             new ResidenceTitle(ResidenceTitleType.Tourist, "NONE", "None"), 0, LanguageLevel.B1);
+        searchApplicant.EducationCases.Add(new EducationPurposeCase 
+        { 
+            PurposeType = EducationPurposeType.SearchForTraining_17_1,
+            HasGermanSchoolDegree = true,
+            PlannedStayDays = 180
+        });
+        // Livelihood not set -> default false? No, we need to set it explicit if we want to pass. 
+        // Applicant ctor sets Livelihood=false by default (implied).
+
+        var searchResult = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(searchApplicant)).Result;
+        foreach(var r in searchResult.RuleResults.Where(x => x.References.Any(refn => refn.NormId.Contains("§ 17"))))
+             PrintResult("§ 17(1) Search (Expected: Fail Livelihood)", r);
+
+        // 27. § 18(3) Fachkraft Definition (Pass)
+        var skilledWorker = new Applicant("Skilled Carpenter",
+             new ResidenceTitle(ResidenceTitleType.Tourist, "NONE", "None"), 5, LanguageLevel.B1);
+        skilledWorker.EmploymentCases.Add(new EmploymentCase
+        {
+             Qualification = QualificationType.VocationalTraining,
+             Equivalence = EquivalenceStatus.Confirmed,
+             HasConcreteJobOffer = true,
+             HasBAApproval = true,
+             MonthlySalaryGross = 3500
+        });
+        
+        var skilledResult = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(skilledWorker)).Result;
+        
+        foreach(var r in skilledResult.RuleResults.Where(x => x.References.Any(refn => refn.NormId.Contains("§ 18"))))
+             PrintResult("§ 18 Skilled Worker Check", r);
+
+        // 28. § 18(2) Age Check (Fail Salary < Threshold)
+        var olderWorker = new Applicant("Older Worker (Low Salary)",
+             new ResidenceTitle(ResidenceTitleType.Tourist, "NONE", "None"), 5, LanguageLevel.B1);
+        olderWorker.EmploymentCases.Add(new EmploymentCase
+        {
+             Qualification = QualificationType.AcademicDegree,
+             Equivalence = EquivalenceStatus.Confirmed,
+             HasConcreteJobOffer = true,
+             MonthlySalaryGross = 3000, // < 4000
+             HasAdequatePensionPlan = false
+        });
+        // Note: The rule currently warns if Salary < Threshold & No Pension, regardless of Age (as Age is missing).
+        
+        var olderResult = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(olderWorker)).Result;
+        foreach(var r in olderResult.RuleResults.Where(x => x.RuleId == "Fact_18_2_5_Age"))
+             PrintResult("§ 18 Age/Pension Check (Expected: Fail/Warn)", r);
+
+        // 29. § 18a Entitlement (Vocational)
+        // Uses 'skilledWorker' from above (Vocational, Confirmed, Job Offer)
+        var skilledResult2 = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(skilledWorker)).Result;
+        foreach(var r in skilledResult2.RuleResults.Where(x => x.RuleId == "Entitlement_18a_Vocational"))
+             PrintResult("§ 18a Entitlement (Expected: Success)", r);
+
+        // 30. § 18c Settlement (Regular 3 years)
+        // Need history
+        skilledWorker.PensionContributionMonths = 36;
+        skilledWorker.ResidenceHistory.Add(new ResidencePeriod(
+            new DateOnly(2020, 1, 1), new DateOnly(2023, 1, 1), 
+            ResidenceTitleType.Fachkraft, "DE", "Berlin"));
+        
+        var settlementResult = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(skilledWorker)).Result;
+        foreach(var r in settlementResult.RuleResults.Where(x => x.RuleId == "Settlement_18c_Niederlassung"))
+             PrintResult("§ 18c Settlement (Expected: Success 36m)", r);
+
+        // 31. § 18c Settlement (Blue Card Fast Track)
+        var blueCardHolder = new Applicant("Blue Card Pro",
+             new ResidenceTitle(ResidenceTitleType.BlueCardEU, "18g", "BlueCard"), 24, LanguageLevel.B1);
+        blueCardHolder.PensionContributionMonths = 24;
+        blueCardHolder.ResidenceHistory.Add(new ResidencePeriod(
+            new DateOnly(2022, 1, 1), new DateOnly(2024, 1, 1), // 24 months 
+            ResidenceTitleType.BlueCardEU, "DE", "Munich"));
+
+        var bcResult = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(blueCardHolder)).Result;
+        foreach(var r in bcResult.RuleResults.Where(x => x.RuleId == "Settlement_18c_Niederlassung"))
+             PrintResult("§ 18c Blue Card Settlement (Expected: Success 21m path)", r);
+
+        // 32. § 18e Research Mobility (Pass)
+        var researcher = new Applicant("Researcher (Mobile)",
+             new ResidenceTitle(ResidenceTitleType.Unknown, "FR-RES-123", "France"), 0, LanguageLevel.B2);
+        researcher.EducationCases.Add(new EducationPurposeCase 
+        { 
+            PurposeType = EducationPurposeType.ResearchMobility_18e,
+            HasHostingAgreement = true,
+            BamfNotificationDate = DateTimeOffset.Now.AddDays(-10),
+            PlannedStayDays = 120 // < 180
+        });
+        // Livelihood true by default via ctor? No, ctor sets it to false implicitly in my helper usually.
+        // wait, 'Applicant' class (helper inside Program.cs) definition:
+        // public bool IsLivelihoodSecured { get; set; } = true; (Let's check or assume true based on prev tests passing)
+        // Actually, looking at older tests, failed livelihood was explicit.
+        // Let's assume IsLivelihoodSecured defaults to false in ContextBuilder if not set? 
+        // BuildDemoContext maps it from p.IsLivelihoodSecured.
+        // Let's ensure it's true.
+        researcher.IsLivelihoodSecured = true;
+
+        var mobResult = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(researcher)).Result;
+        foreach(var r in mobResult.RuleResults.Where(x => x.RuleId == "Fact_18e_ResearchMobility"))
+             PrintResult("§ 18e Mobility (Expected: Success/Exempt)", r);
+
+        // 33. § 18f Long-term Mobility (Pass)
+        var longTermResearcher = new Applicant("Researcher (LongTerm)",
+             new ResidenceTitle(ResidenceTitleType.Unknown, "IT-RES-999", "Italy"), 0, LanguageLevel.C1);
+        longTermResearcher.EducationCases.Add(new EducationPurposeCase 
+        { 
+            PurposeType = EducationPurposeType.ResearchMobility_18f,
+            HasHostingAgreement = true,
+            PlannedStayDays = 200 // > 180, < 365
+        });
+        longTermResearcher.IsLivelihoodSecured = true;
+
+        var ltResult = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(longTermResearcher)).Result;
+        foreach(var r in ltResult.RuleResults.Where(x => x.RuleId == "Fact_18f_MobileResearcher"))
+             PrintResult("§ 18f Mobility (Expected: Success/Grant)", r);
+
+        Console.WriteLine("\n--- BLUE CARD EU (§ 18g) ---");
+        
+        // 34. Blue Card Standard (High Salary)
+        var bcStandard = new Applicant("BC Standard", new ResidenceTitle(ResidenceTitleType.Tourist, "", ""), 0, LanguageLevel.A1);
+        bcStandard.EmploymentCases.Add(new EmploymentCase
+        {
+             Qualification = QualificationType.AcademicDegree,
+             Equivalence = EquivalenceStatus.Confirmed,
+             HasConcreteJobOffer = true,
+             JobDurationMonths = 12,
+             MonthlySalaryGross = 3800, // > 3775
+             IscoCode = "111" // CEO/Manager (Not shortage)
+        });
+        var bcStdRes = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(bcStandard)).Result;
+        foreach(var r in bcStdRes.RuleResults.Where(x=>x.RuleId == "Entitlement_18g_BlueCard")) PrintResult("BC Standard (>3775)", r);
+
+        // 35. Blue Card Shortage (Reduced Salary)
+        var bcShortage = new Applicant("BC Shortage", new ResidenceTitle(ResidenceTitleType.Tourist, "", ""), 0, LanguageLevel.A1);
+        bcShortage.EmploymentCases.Add(new EmploymentCase
+        {
+             Qualification = QualificationType.AcademicDegree,
+             Equivalence = EquivalenceStatus.Confirmed,
+             HasConcreteJobOffer = true,
+             JobDurationMonths = 12,
+             MonthlySalaryGross = 3500, // < 3775 but > 3420
+             IscoCode = "2512" // Software Developer (Group 25 -> Shortage)
+        });
+        var bcShortRes = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(bcShortage)).Result;
+        foreach(var r in bcShortRes.RuleResults.Where(x=>x.RuleId == "Entitlement_18g_BlueCard")) PrintResult("BC Shortage (ISCO 25)", r);
+
+        // 36. Blue Card IT Specialist (No Degree)
+        var bcIT = new Applicant("BC IT Pro", new ResidenceTitle(ResidenceTitleType.Tourist, "", ""), 0, LanguageLevel.A1);
+        bcIT.EmploymentCases.Add(new EmploymentCase
+        {
+             Qualification = QualificationType.None, // No Degree!
+             HasITSpecialistExperience = true,
+             HasConcreteJobOffer = true,
+             JobDurationMonths = 12,
+             MonthlySalaryGross = 3500, // > 3420
+             IscoCode = "2512" // Required 25 or 133
+        });
+        var bcItRes = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(bcIT)).Result;
+        foreach(var r in bcItRes.RuleResults.Where(x=>x.RuleId == "Entitlement_18g_BlueCard")) PrintResult("BC IT Specialist (No Degree)", r);
+
+        // 37. § 18h Blue Card Business Mobility
+        var bcMobile = new Applicant("BC Mobile", new ResidenceTitle(ResidenceTitleType.Unknown, "PL-BC-1", "Poland"), 0, LanguageLevel.A1);
+        bcMobile.EmploymentCases.Add(new EmploymentCase
+        {
+             MobilityType = EmployeeMobilityType.BlueCardBusiness_18h,
+             PlannedMobilityDays = 45 // < 90
+        });
+
+        var bcMobResult = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(bcMobile)).Result;
+        foreach(var r in bcMobResult.RuleResults.Where(x => x.RuleId == "Fact_18h_BlueCardMobility"))
+             PrintResult("§ 18h BC Mobility (Expected: Success/Exempt)", r);
+
+        // 38. § 18i Long-Term Mobility (Move from France -> Germany)
+        var bcMove = new Applicant("BC Mover", new ResidenceTitle(ResidenceTitleType.BlueCardEU, "FRA-BC-2023", "France"), 0, LanguageLevel.A1);
+        bcMove.EmploymentCases.Add(new EmploymentCase
+        {
+             MobilityType = EmployeeMobilityType.BlueCardLongTerm_18i,
+             Qualification = QualificationType.AcademicDegree,
+             Equivalence = EquivalenceStatus.Confirmed,
+             HasConcreteJobOffer = true,
+             MonthlySalaryGross = 4000, 
+             JobDurationMonths = 24,
+             IscoCode = "2512" 
+        });
+        bcMove.PensionContributionMonths = 14; // > 12 months prior residence simulation
+        
+        var bcMoveRes = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(bcMove)).Result;
+        foreach(var r in bcMoveRes.RuleResults.Where(x => x.RuleId == "Fact_18i_LongTermMobility"))
+             PrintResult("§ 18i Long-Term Mobility (Expected: Success/Grant 18g)", r);
+
+        Console.WriteLine("\n--- ICT CARD (§ 19) ---");
+        
+        // 39. ICT Manager (Success)
+        var ictMgr = new Applicant("ICT Manager", new ResidenceTitle(ResidenceTitleType.Tourist, "", ""), 0, LanguageLevel.A1);
+        ictMgr.EmploymentCases.Add(new EmploymentCase
+        {
+             IsICT = true,
+             IctRole = ICTRole.Manager,
+             PriorGroupEmploymentMonths = 12,
+             HasReturnGuarantee = true,
+             Qualification = QualificationType.AcademicDegree,
+             JobDurationMonths = 36, // Max allowed
+             MonthlySalaryGross = 6000
+        });
+        var ictMgrResult = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(ictMgr)).Result;
+        foreach(var r in ictMgrResult.RuleResults.Where(x => x.RuleId == "Entitlement_19_ICTCard")) PrintResult("ICT Manager (3 years)", r);
+
+        // 40. ICT Trainee (Fail - Duration)
+        var ictTrainee = new Applicant("ICT Trainee Fail", new ResidenceTitle(ResidenceTitleType.Tourist, "", ""), 0, LanguageLevel.A1);
+        ictTrainee.EmploymentCases.Add(new EmploymentCase
+        {
+             IsICT = true,
+             IctRole = ICTRole.Trainee,
+             PriorGroupEmploymentMonths = 8,
+             HasReturnGuarantee = true,
+             Qualification = QualificationType.AcademicDegree, // Required
+             JobDurationMonths = 13, // > 12 months allowed for Trainee
+             MonthlySalaryGross = 3000
+        });
+        var ictTraineeResult = evaluator.EvaluateAsync("AufenthG_Edu", BuildDemoContext(ictTrainee)).Result;
+        foreach(var r in ictTraineeResult.RuleResults.Where(x => x.RuleId == "Entitlement_19_ICTCard")) PrintResult("ICT Trainee (>1 year) (Expected: Fail)", r);
     }
 
     static void PrintResult(string title, RuleResult result)
