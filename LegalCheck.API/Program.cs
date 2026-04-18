@@ -9,14 +9,22 @@ using LegalCheck.Application.Interfaces;
 using LegalCheck.Application.Services;
 using LegalCheck.Persistence.Repositories;
 using LegalCheck.Persistence.Services;
+using Microsoft.EntityFrameworkCore;
+using LegalCheck.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Infrastructure / Persistence
+// Use SQLite for "saved in database"
+builder.Services.AddDbContext<AppDbContext>(options => 
+    options.UseSqlite("Data Source=legalcheck.db"));
+
 builder.Services.AddSingleton<ILawRepository, InMemoryLawRepository>();
-builder.Services.AddSingleton<IPersonRepository, InMemoryPersonRepository>();
+// Use Scoped for EF Core repositories
+builder.Services.AddScoped<IPersonRepository, EfPersonRepository>();
+builder.Services.AddScoped<IEvaluationRepository, EfEvaluationRepository>();
 builder.Services.AddSingleton<IRuleEvaluator, RuleEngineService>(); // The engine implementation
 
 // Application Services
@@ -33,6 +41,13 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+// Auto-migrate/create db for demo
+using (var scope = app.Services.CreateScope())
+{
+    var content = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    content.Database.EnsureCreated();
 }
 
 app.MapGet("/api/v1/laws", ([FromServices] ILawRepository repo) => Results.Ok(repo.ListLaws()));

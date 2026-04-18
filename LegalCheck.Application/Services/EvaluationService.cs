@@ -10,14 +10,14 @@ namespace LegalCheck.Application.Services;
 public class EvaluationService
 {
     private readonly IPersonRepository _personRepo;
-    private readonly IRuleEvaluator _evaluator; // From Domain/API layer? Or define interface here? 
-    private readonly IPersonRepository _personRepo;
     private readonly IRuleEvaluator _evaluator;
+    private readonly IEvaluationRepository _evalRepo;
 
-    public EvaluationService(IPersonRepository personRepo, IRuleEvaluator evaluator)
+    public EvaluationService(IPersonRepository personRepo, IRuleEvaluator evaluator, IEvaluationRepository evalRepo)
     {
         _personRepo = personRepo;
         _evaluator = evaluator;
+        _evalRepo = evalRepo;
     }
 
     public async Task<EvaluationResult> EvaluateForPersonAsync(
@@ -33,7 +33,25 @@ public class EvaluationService
         var context = BuildContext(person, asOfDate);
 
         // Execute
-        return await _evaluator.EvaluateAsync(lawId, context);
+        var result = await _evaluator.EvaluateAsync(lawId, context);
+
+        // Save History
+        foreach (var r in result.RuleResults)
+        {
+            var rec = new EvaluationRecord
+            {
+                Id = Guid.NewGuid(),
+                PersonId = personId,
+                RuleId = r.RuleId,
+                IsSuccess = r.IsSatisfied,
+                Message = r.Message ?? "",
+                Citations = string.Join(";", r.References.Select(c => c.ToString())),
+                EvaluatedAt = asOfDate
+            };
+            await _evalRepo.AddRecordAsync(rec);
+        }
+
+        return result;
     }
 
     private CaseContext BuildContext(Person p, DateTimeOffset date)
