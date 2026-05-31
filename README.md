@@ -1,4 +1,4 @@
-# LegalCheck — Regel-Engine für das deutsche Aufenthaltsgesetz (AufenthG)
+![alt text](image.png)# LegalCheck — Regel-Engine für das deutsche Aufenthaltsgesetz (AufenthG)
 
 **LegalCheck** ist eine in .NET 8 entwickelte Regel- und Fallprüfungs-Engine, die die rechtlichen Voraussetzungen des deutschen **Aufenthaltsgesetzes (AufenthG)** maschinell auswertet. Das System bildet einzelne Paragraphen des AufenthG sowie ergänzender Gesetze (z. B. **StAG** — Staatsangehörigkeitsgesetz) als prüfbare, komponierbare Regeln in C# ab und liefert für einen konkreten Sachverhalt (eine Person mit Aufenthaltshistorie, Asylstatus, Bildungs-/Beschäftigungsdaten und Nachweisdokumenten) eine begründete Ja/Nein-Entscheidung mit der jeweiligen gesetzlichen Fundstelle.
 
@@ -247,4 +247,4 @@ Antwort (vereinfacht):
 
 Dieses Projekt dient der **technischen Prüfungsunterstützung** und ersetzt **keine Rechtsberatung**. Die abgebildeten Paragraphen werden mit größtmöglicher Sorgfalt gepflegt; verbindlich ist allein der amtliche Gesetzestext. Für eine rechtsverbindliche Entscheidung im Einzelfall ist stets die zuständige Ausländerbehörde bzw. eine zur Rechtsberatung befugte Person heranzuziehen.
 
-— *Stand: Mai 2026*
+— *Stand: Mai 2026* · *Autor: hadineas*
